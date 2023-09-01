@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
             finish();
         }
 
-        System.loadLibrary("ModMenu");
+        System.loadLibrary("Loader");
     }
 
     private boolean detectOpenGLES30() {
