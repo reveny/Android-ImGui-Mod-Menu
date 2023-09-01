@@ -15,8 +15,6 @@ void DrawMenu() {
 
 void *thread(void *) {
     LOGI(OBFUSCATE("Main Thread Loaded: %d"), gettid());
-
-    //This will only work ingame and not in the test app
     initModMenu((void *)DrawMenu);
 
     //Hooks, Patches and Pointers here
@@ -38,5 +36,5 @@ void init() {
     pthread_create(&t, nullptr, thread, nullptr);
 
     //Don't leave any traces, remap the loader lib as well
-    RemapTools::RemapLibrary("libLoader.so");
+    //RemapTools::RemapLibrary("libLoader.so");
 }
