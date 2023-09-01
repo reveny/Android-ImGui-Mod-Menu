@@ -36,5 +36,5 @@ void init() {
     pthread_create(&t, nullptr, thread, nullptr);
 
     //Don't leave any traces, remap the loader lib as well
-    //RemapTools::RemapLibrary("libLoader.so");
+    RemapTools::RemapLibrary("libLoader.so");
 }
