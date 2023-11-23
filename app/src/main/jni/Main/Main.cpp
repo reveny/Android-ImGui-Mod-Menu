@@ -28,6 +28,22 @@ void *thread(void *) {
     pthread_exit(0);
 }
 
+// Call anything from JNI_OnLoad here
+extern "C" {
+    // JNI Support
+    JavaVM *jvm = nullptr;
+    JNIEnv *env = nullptr;
+
+    __attribute__((visibility ("default")))
+    jint loadJNI(JavaVM *vm) {
+        jvm = vm;
+        vm->AttachCurrentThread(&env, nullptr);
+        LOGI("loadJNI(): Initialized");
+
+        return JNI_VERSION_1_6;
+    }
+}
+
 __attribute__((constructor))
 void init() {
     LOGI("Loaded Mod Menu");
