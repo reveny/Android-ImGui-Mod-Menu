@@ -1,0 +1,50 @@
+ImGui::Checkbox(oxorany("快速换弹"), &功能.内存.NoSmokev2);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("快速切枪"), &功能.内存.SPPED);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("内存广角"), &功能.写入绘制.WideView);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("强开高帧"), &跳过锁帧);
+
+ImGui::Checkbox(oxorany("内存除雾"), &内存除雾);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("内存聚点"), &功能.内存.xsz);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("地绒瞬击"), &功能.内存.Instant);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("加粗特效"), &功能.内存.HitEffect);
+
+ImGui::Checkbox(oxorany("内存防抖"), &功能.内存.Shake);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("绿色空间"), &功能.内存.Dark);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("内存无后"), &功能.内存.Recoil);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("载具传送"), &载具传送);
+
+ImGui::Checkbox(oxorany("人物上色"), &功能.内存.RGB);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("头部效应"), &功能.内存.HeadShoot);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("快速开镜"), &功能.Shunjj);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("子弹射速"), &功能.Switch);
+
+ImGui::Checkbox(oxorany("无限子弹"), &功能.无限子弹);
+ImGui::SameLine();
+ImGui::Checkbox(oxorany("增加伤害"), &功能.内存.高伤);
+
+ImGui::Checkbox(oxorany("王八草地"), &功能.内存.GhostMode);
+ImGui::Checkbox(oxorany("快速跳伞"), &功能.内存.快速跳伞);
+ImGui::Checkbox(oxorany("超级攀爬"), &功能.内存.wall);
+ImGui::Checkbox(oxorany("载具满油"), &汽车无限油);
+
+ImGui::Checkbox(oxorany("魔法子弹"), &杀猪子弹);
+ImGui::Checkbox(oxorany("显示伤害"), &伤害显示);
+ImGui::Checkbox(oxorany("人物转圈"), &人物旋转);
+ImGui::Checkbox(oxorany("人物自杀"), &自杀);
+
+// نچلے حصے کے بٹن
+ImGui::Checkbox(oxorany("飞天面板"), &show_飞天);
+ImGui::Checkbox(oxorany("加速面板"), &show_加速);
+ImGui::Checkbox(oxorany("晴空万里"), &晴天);
