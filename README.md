@@ -28,7 +28,7 @@ ImGui by ocornut: https://github.com/ocornut/imgui <br />
 DobbyHook by jmpwes: https://github.com/jmpews/Dobby <br />
 KittyMemory by MJx0: https://github.com/MJx0/KittyMemory <br />
 OpenGL Test by JimSeker: https://github.com/JimSeker/opengl/tree/master <br />
-ImGui Touch by fedes1to: https://github.com/fedes1to/Zygisk-ImGui-Menu <br />
+ImGui Touch by NepMods: https://github.com/NepMods/LibInput-Hook-Research-For-Imgui-Touch <br />
 
 # Contact
 Telegram Contact: 
