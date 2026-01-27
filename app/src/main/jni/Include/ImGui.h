@@ -1,5 +1,8 @@
 //
 // Created by Reveny on 2022/12/25.
+// Updated 27.01.2026 (Android 15+)
+// ORIGIN ANDROID 15 - NOT WORK (tested)
+// OTHERS OS - WORK (tested)
 //
 
 #include <EGL/egl.h>
@@ -18,6 +21,9 @@
 #include "Obfuscate.h"
 #include "Logger.h"
 
+//YOUR XDL PATH
+#include <../Include/xdl/include/xdl.h>
+
 void menuStyle();
 void (*menuAddress)();
 
@@ -29,49 +35,164 @@ bool isInitialized = false;
 int glWidth = 0;
 int glHeight = 0;
 
-//Taken from https://github.com/fedes1to/Zygisk-ImGui-Menu/blob/main/module/src/main/cpp/hook.cpp
-#define HOOKINPUT(ret, func, ...) \
-    ret (*orig##func)(__VA_ARGS__); \
-    ret my##func(__VA_ARGS__)
-
-HOOKINPUT(void, Input, void *thiz, void *ex_ab, void *ex_ac) {
+//input Hooks from https://github.com/NepMods/LibInput-Hook-Research-For-Imgui-Touch
+//InitializeMotionEvent (Android < 15)
+static void (*origInput)(void *thiz, void *ex_ab, void *ex_ac);
+void myInput(void *thiz, void *ex_ab, void *ex_ac) {
     origInput(thiz, ex_ab, ex_ac);
     ImGui_ImplAndroid_HandleInputEvent((AInputEvent *)thiz);
-    return;
 }
 
-HOOKINPUT(int32_t, Consume, void *thiz, void *arg1, bool arg2, long arg3, uint32_t *arg4, AInputEvent **input_event)
-{
-    auto result = origConsume(thiz, arg1, arg2, arg3, arg4, input_event);
-    if(result != 0 || *input_event == nullptr) return result;
-    ImGui_ImplAndroid_HandleInputEvent(*input_event);
+// 64-bit sign
+static int32_t (*origConsume64)(void* consumer,
+                                 void* factory,
+                                 bool isRaw,
+                                 long sequenceId,
+                                 uint32_t* outPolicyFlags,
+                                 void** outEventPtr);
+
+int32_t myConsume64(void* consumer,
+                    void* factory,
+                    bool isRaw,
+                    long sequenceId,
+                    uint32_t* outPolicyFlags,
+                    void** outEventPtr) {
+    int32_t result = origConsume64(consumer,
+                                    factory,
+                                    isRaw,
+                                    sequenceId,
+                                    outPolicyFlags,
+                                    outEventPtr);
+
+    if (result == 0 && outEventPtr && *outEventPtr) {
+        AInputEvent* event = reinterpret_cast<AInputEvent*>(*outEventPtr);
+        ImGui_ImplAndroid_HandleInputEvent(event);
+    }
+
     return result;
 }
 
-//This menu_addr is used to allow for multiple game support in the future
+// 32-bit sign
+static int32_t (*origConsume32)(void* consumer,
+                                 void* factory,
+                                 bool isRaw,
+                                 int64_t sequenceId,  
+                                 uint32_t* outPolicyFlags,
+                                 void** outEventPtr);
+
+int32_t myConsume32(void* consumer,
+                    void* factory,
+                    bool isRaw,
+                    int64_t sequenceId,
+                    uint32_t* outPolicyFlags,
+                    void** outEventPtr) {
+    int32_t result = origConsume32(consumer,
+                                    factory,
+                                    isRaw,
+                                    sequenceId,
+                                    outPolicyFlags,
+                                    outEventPtr);
+
+    if (result == 0 && outEventPtr && *outEventPtr) {
+        AInputEvent* event = reinterpret_cast<AInputEvent*>(*outEventPtr);
+        ImGui_ImplAndroid_HandleInputEvent(event);
+    }
+
+    return result;
+}
+
+//Android < 15
+#define SYMBOL_INIT_MOTION_EVENT \
+    "_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"
+
+//Android 15+ (64-bit)
+#define SYMBOL_CONSUME_64 \
+    "_ZN7android13InputConsumer7consumeEPNS_26InputEventFactoryInterfaceEblPjPPNS_10InputEventE"
+
+//Android 15+ (32bit)
+#define SYMBOL_CONSUME_32 \
+    "_ZN7android13InputConsumer7consumeEPNS_26InputEventFactoryInterfaceEbxPjPPNS_10InputEventE"
+
+
+#if defined(__aarch64__) || defined(__x86_64__)
+    #define IS_64BIT 1
+    #define LIBINPUT_PATH "/system/lib64/libinput.so"
+#else
+    #define IS_64BIT 0
+    #define LIBINPUT_PATH "/system/lib/libinput.so"
+#endif
+
+
+void setupInputHooks() {
+    void* sym_input = nullptr;
+    
+    sym_input = DobbySymbolResolver(
+        OBFUSCATE(LIBINPUT_PATH), 
+        OBFUSCATE(SYMBOL_INIT_MOTION_EVENT)
+    );
+    
+    if (sym_input != nullptr) {
+        LOGI("Found initializeMotionEvent (Android < 15)");
+        DobbyHook(sym_input, (void*)myInput, (void**)&origInput);
+        return;
+    }
+    
+    LOGI("initializeMotionEvent not found, trying consume() for Android 15+");
+    
+    #if IS_64BIT
+        sym_input = DobbySymbolResolver(
+            OBFUSCATE(LIBINPUT_PATH),
+            OBFUSCATE(SYMBOL_CONSUME_64)
+        );
+        
+        if (sym_input != nullptr) {
+            LOGI("Found consume() 64-bit at %p", sym_input);
+            DobbyHook(sym_input, (void*)myConsume64, (void**)&origConsume64);
+            return;
+        }
+    #else
+        sym_input = DobbySymbolResolver(
+            OBFUSCATE(LIBINPUT_PATH),
+            OBFUSCATE(SYMBOL_CONSUME_32)
+        );
+        
+        if (sym_input != nullptr) {
+            LOGI("Found consume() 32-bit at %p", sym_input);
+            DobbyHook(sym_input, (void*)myConsume32, (void**)&origConsume32);
+            return;
+        }
+    #endif
+    LOGE("Failed to find any input hook symbol");
+}
+
 void *initModMenu(void *menu_addr) {
     menuAddress = (void (*)())menu_addr;
+    
     do {
         sleep(1);
     } while (!isLibraryLoaded(OBFUSCATE("libEGL.so")));
 
-    auto swapBuffers = ((uintptr_t) DobbySymbolResolver(OBFUSCATE("libEGL.so"), OBFUSCATE("eglSwapBuffers")));
-    KittyMemory::ProtectAddr((void *)swapBuffers, sizeof(swapBuffers), PROT_READ | PROT_WRITE | PROT_EXEC);
-    DobbyHook((void *) swapBuffers, (void *) swapbuffers_hook, (void **) &o_swapbuffers);
+    // Хук eglSwapBuffers
+    auto swapBuffers = ((uintptr_t)DobbySymbolResolver(
+        OBFUSCATE("libEGL.so"), 
+        OBFUSCATE("eglSwapBuffers")
+    ));
+    
+    KittyMemory::ProtectAddr(
+        (void*)swapBuffers, 
+        sizeof(swapBuffers), 
+        PROT_READ | PROT_WRITE | PROT_EXEC
+    );
+    
+    DobbyHook(
+        (void*)swapBuffers, 
+        (void*)swapbuffers_hook, 
+        (void**)&o_swapbuffers
+    );
 
-    //Taken from https://github.com/fedes1to/Zygisk-ImGui-Menu/blob/main/module/src/main/cpp/hook.cpp
-  void *sym_input = DobbySymbolResolver(OBFUSCATE("/system/lib/libinput.so"), OBFUSCATE("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE"));
- 
-    if (sym_input != nullptr) {
-        DobbyHook((void *) sym_input, (void *) myInput, (void **) &origInput);
-    } else {
-        sym_input = DobbySymbolResolver(("/system/lib/libinput.so"), ("_ZN7android13InputConsumer7consumeEPNS_26InputEventFactoryInterfaceEblPjPPNS_10InputEventE"));
-        if(NULL != sym_input) {
-            DobbyHook(sym_input,(void *) myConsume,(void **) &origConsume);
-        }
-    } //c
+  
 
-    LOGI(OBFUSCATE("ImGUI Hooks initialized"));
+    LOGI(OBFUSCATE("ImGUI Hooks initialized!!! "));
     return nullptr;
 }
 
@@ -101,10 +222,11 @@ void setupMenu() {
     ImGui::GetStyle().ScaleAllSizes(2);
 
     isInitialized = true;
-    LOGI("setup done.");
+    LOGI("Setup done.");
 }
+
 void internalDrawMenu(int width, int height) {
-    if(!isInitialized) return;
+    if (!isInitialized) return;
 
     ImGuiIO &io = ImGui::GetIO();
 
@@ -115,7 +237,6 @@ void internalDrawMenu(int width, int height) {
     menuAddress();
 
     ImGui::Render();
-
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
