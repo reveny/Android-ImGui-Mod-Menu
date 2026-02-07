@@ -16,7 +16,7 @@ void DrawMenu() {
 void *thread(void *) {
     LOGI(OBFUSCATE("Main Thread Loaded: %d"), gettid());
     initModMenu((void *)DrawMenu);
-    SetupInpuyHooks();
+    SetupInputHooks();
 
     //Hooks, Patches and Pointers here
     //Example:
