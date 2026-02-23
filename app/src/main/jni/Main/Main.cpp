@@ -1,5 +1,7 @@
 //
 // Created by reveny on 21/08/2023.
+// Updated by Blitchcore on 23.02.2025.
+// InitInputHooks Added
 //
 
 #include "../Include/KittyMemory/MemoryPatch.h"
@@ -15,7 +17,9 @@ void DrawMenu() {
 
 void *thread(void *) {
     LOGI(OBFUSCATE("Main Thread Loaded: %d"), gettid());
+    
     initModMenu((void *)DrawMenu);
+    
     SetupInputHooks();
 
     //Hooks, Patches and Pointers here
