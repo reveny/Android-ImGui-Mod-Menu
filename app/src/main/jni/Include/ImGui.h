@@ -84,6 +84,8 @@ void setupMenu() {
         return;
     }
 
+    menuStyle();
+
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)glWidth, (float)glHeight);
     io.ConfigWindowsMoveFromTitleBarOnly = true;

@@ -29,7 +29,6 @@ LOCAL_SRC_FILES := ../Main/Main.cpp \
                    ../Include/ImGui/backends/imgui_impl_android.cpp \
                    ../Include/ImGui/imgui.cpp \
                    ../Include/ImGui/imgui_draw.cpp \
-                   ../Include/ImGui/imgui_demo.cpp \
                    ../Include/ImGui/imgui_tables.cpp \
                    ../Include/ImGui/imgui_widgets.cpp \
 				   ../Include/xdl/xdl.c \
